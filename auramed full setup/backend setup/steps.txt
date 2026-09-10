@@ -1,0 +1,7 @@
+1. setup and install dependencies
+2. all python all stuffs
+3. cd auramed-backend
+4. create venv python
+5. go into venv
+6. uvicorn server:app --host 0.0.0.0 --port 8000
+7. server now runs check public ip below and add it in api layer

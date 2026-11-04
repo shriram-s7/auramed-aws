@@ -1,0 +1,675 @@
+====================================================================================================
+                       AURAMED HEALTHCARE (AURAMED AI)
+             LOCAL FULL-STACK SYSTEM & MACHINE LEARNING ARCHITECTURE REPORT
+====================================================================================================
+Document Version: 2.0.0 (Localhost Full-Stack Edition)
+Classification: Technical System & Machine Learning Specification
+Environment Target: Localhost / On-Premise Clinical Workstation
+Backend Runtime: Python 3 (FastAPI + Uvicorn) @ http://127.0.0.1:8000
+Frontend Runtime: React 18 + Vite 5 @ http://localhost:5173
+Target Medical Modalities: Breast Oncology, Cervical Cytology, Gynecological Endocrinology (PCOS)
+====================================================================================================
+
+TABLE OF CONTENTS:
+----------------------------------------------------------------------------------------------------
+1. PROJECT OVERVIEW & CLINICAL GOALS
+2. LOCAL SYSTEM ARCHITECTURE & TECH STACKS
+   2.1 Architecture Topology (Client-Server Model)
+   2.2 Frontend Technology Stack (Vite + React)
+   2.3 Backend Technology Stack (FastAPI + PyTorch)
+   2.4 Local Orchestration, Ports & Batch Launchers
+3. IN-DEPTH MACHINE LEARNING MODELS & INFERENCE PIPELINES
+   3.1 Module 1: Breast Cancer Multimodal Late-Fusion System
+       3.1.1 Image Processing Backbone (ResNet-50)
+       3.1.2 Clinical Risk Classifier (Random Forest)
+       3.1.3 Multimodal Fusion Equation & Risk Stratification
+       3.1.4 Rule-Based Clinical Explanation Engine
+       3.1.5 Multi-Year Longitudinal Risk Timeline Forecasting
+   3.2 Module 2: Cervical Cancer Vision Transformer (ViT) Classifier
+       3.2.1 Deep Learning Architecture (ViT-Base Patch16-224)
+       3.2.2 Microscopic Cytology Preprocessing Pipeline
+       3.2.3 Five Histopathological Output Classes
+       3.2.4 Bethesda System Clinical Progression Matrix
+   3.3 Module 3: PCOS Ultrasound Classifier & Explainable AI (Grad-CAM)
+       3.3.1 Customized Neural Backbone (PCOSVisionModel / ResNet-50)
+       3.3.2 Real-Time Grad-CAM Mathematical Mechanics
+       3.3.3 Colormap Generation, Alpha Blending & Base64 Data Streaming
+       3.3.4 Rotterdam Diagnostic Consensus & Endocrine Biomarkers
+4. BACKEND FASTAPI SERVER & REST API SPECIFICATION
+   4.1 Server Structure & Middleware Setup (server.py)
+   4.2 Dynamic Model Loader & Fault-Tolerant Fallback
+   4.3 Complete API Endpoint Contracts & Payloads
+       4.3.1 POST /patient/start
+       4.3.2 POST /patient/test/save
+       4.3.3 POST /predict/breast
+       4.3.4 POST /predict/cervical
+       4.3.5 POST /predict/pcos
+   4.4 Local In-Memory Data Store (patient_tests_db)
+5. FRONTEND ARCHITECTURE & CLINICAL USER EXPERIENCE
+   5.1 State Management & Global Session Guard (PatientContext.jsx)
+   5.2 Route Protection & Diagnostic Module Lock Mechanism
+   5.3 Clinical Diagnostic Pages
+       5.3.1 Doctor Authentication (Login.jsx)
+       5.3.2 Master Command Center (Dashboard.jsx)
+       5.3.3 Breast Oncology Workbench (BreastCancer.jsx)
+       5.3.4 Cervical Cytology Workbench (CervicalCancer.jsx)
+       5.3.5 PCOS Diagnostic Workbench (PCOS.jsx)
+   5.4 Reusable UI Components
+       5.4.1 ImageUploader.jsx
+       5.4.2 PatientForm.jsx
+       5.4.3 ResultPanel.jsx
+       5.4.4 HistoryTable.jsx & UsageStats.jsx
+       5.4.5 Navbar.jsx & Sidebar.jsx
+   5.5 Medical Interpretability Engine (ClinicalInterpretation.js)
+6. LOCAL DIRECTORY STRUCTURE & CODE REPOSITORY INVENTORY
+7. MODEL VERIFICATION SCRIPT & SAMPLE TEST DATA
+8. ARCHITECTURAL STRENGTHS & KEY TAKEAWAYS
+====================================================================================================
+
+
+====================================================================================================
+1. PROJECT OVERVIEW & CLINICAL GOALS
+====================================================================================================
+AuraMed Healthcare (AuraMed AI) is a specialized, multi-disease clinical decision support system
+designed to assist medical professionals (radiologists, cytopathologists, and gynecologists) with
+rapid, accurate, and explainable screenings for three critical women's health conditions:
+
+1. Breast Cancer Screening:
+   Detects suspicious tissue lesions in digital mammograms and integrates 11 clinical, metabolic,
+   and genetic risk factors into an unified diagnostic risk score.
+
+2. Cervical Cancer Cytology Classification:
+   Analyzes high-magnification cervical smear microscopy images (.bmp format) to classify cellular
+   dysplasia across five distinct histopathological stages using a Vision Transformer.
+
+3. Polycystic Ovary Syndrome (PCOS) Detection:
+   Identifies polycystic morphology in pelvic ultrasound scans, generates real-time visual heatmaps
+   (Grad-CAM) pinpointing peripheral follicle clusters, and correlates findings with laboratory
+   endocrine biomarkers.
+
+The platform runs completely self-contained in a local environment, linking a modern React-based
+diagnostic interface with a high-performance Python FastAPI inference server.
+
+
+====================================================================================================
+2. LOCAL SYSTEM ARCHITECTURE & TECH STACKS
+====================================================================================================
+
+2.1 Architecture Topology (Client-Server Model):
+------------------------------------------------
+The system is built as a decoupled, asynchronous two-tier client-server architecture running entirely
+on the local machine:
+
+      +------------------------------------------------------------------------+
+      |                        FRONTEND WEB DASHBOARD                          |
+      |                         http://localhost:5173                          |
+      |                                                                        |
+      |  - Single Page Application built on React 18 + Vite                    |
+      |  - TailwindCSS Design System (Teal, Slate, Rose, Amber)               |
+      |  - Interactive Recharts Longitudinal Visualizations                    |
+      |  - Client-Side Session Guard & History Caching (localStorage)          |
+      +-----------------------------------+------------------------------------+
+                                          |
+                                          | HTTP REST Calls (Axios)
+                                          | Base URL: http://127.0.0.1:8000
+                                          | (Multipart Form Data / JSON)
+                                          v
+      +------------------------------------------------------------------------+
+      |                         BACKEND INFERENCE SERVER                       |
+      |                         http://127.0.0.1:8000                          |
+      |                                                                        |
+      |  - FastAPI (Python 3) + Uvicorn ASGI Server                            |
+      |  - Interactive Swagger API Documentation @ /docs                       |
+      |  - In-Memory Patient Examination Log (patient_tests_db)                |
+      |                                                                        |
+      |  +--------------------+--------------------+--------------------+      |
+      |  |  Breast Subsystem  | Cervical Subsystem |   PCOS Subsystem   |      |
+      |  |  ResNet-50 + RF    | ViT-Base Patch 16  | ResNet-50+Grad-CAM |      |
+      |  |  Late Fusion Model | 5-Class Transformer| OpenCV Heatmaps    |      |
+      |  +--------------------+--------------------+--------------------+      |
+      +------------------------------------------------------------------------+
+
+2.2 Frontend Technology Stack:
+------------------------------
+- Core Framework: React 18.2.0 (Functional Components, Hooks, Context API)
+- Bundler & Dev Server: Vite 5.0.8 (Fast Hot-Module Replacement / HMR)
+- Styling: TailwindCSS 3.4.0 + PostCSS + Autoprefixer
+- Routing: React Router DOM 6.20.0
+- Data Visualization: Recharts 2.10.0 (Interactive SVG charts for risk timeline forecasts)
+- Icons: Lucide React 0.300.0 (Medical & operational iconography)
+- HTTP Client: Axios 1.6.0 (Unified API service layer)
+- Configuration: `.env` file specifying `VITE_API_BASE_URL=http://localhost:8000`
+
+2.3 Backend Technology Stack:
+-----------------------------
+- Web Framework: FastAPI (>= 0.100.0)
+- ASGI Server: Uvicorn standard (>= 0.23.0) with hot-reload
+- Validation & Data Modeling: Pydantic (>= 2.0.0)
+- Deep Learning & Vision:
+  * PyTorch (`torch`) - Tensor execution and autograd graph backpropagation
+  * `torchvision` - Pretrained ResNet architectures and image transforms
+  * `timm` (PyTorch Image Models) - Vision Transformer (ViT) implementation
+  * `opencv-python` (`cv2`) - Image colormap generation (JET) and alpha blending
+  * `Pillow` (`PIL`) - Image format loading and buffer decoding
+- Machine Learning & Data Processing:
+  * `scikit-learn` - Random Forest classification model
+  * `joblib` - Serialization and loading of tabular machine learning models
+  * `pandas` - DataFrame data manipulation and feature schema verification
+  * `numpy` - Array manipulations for Grad-CAM activation weighting
+
+2.4 Local Orchestration, Ports & Batch Launchers:
+-------------------------------------------------
+The repository contains native Windows batch scripts enabling one-click local startup:
+- `auramed full setup/run_all.bat`:
+  Spawns two independent terminal windows: one running the backend and one running the frontend.
+- `auramed full setup/run_backend.bat`:
+  Switches to `backend setup/`, loads the local Python virtual environment (`.venv\Scripts\python.exe`),
+  and executes:
+    `uvicorn server:app --host 127.0.0.1 --port 8000 --reload`
+- `auramed full setup/run_frontend.bat`:
+  Switches to `frontend setup/final frontend/` and executes:
+    `npm run dev` (launching Vite on `http://localhost:5173`)
+- `auramed full setup/howtorun.txt`:
+  Provides direct terminal copy-paste commands for manual execution.
+
+
+====================================================================================================
+3. IN-DEPTH MACHINE LEARNING MODELS & INFERENCE PIPELINES
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+3.1 MODULE 1: BREAST CANCER MULTIMODAL LATE-FUSION SYSTEM
+----------------------------------------------------------------------------------------------------
+Files: `backend setup/breast/inference.py`, `breast_model.pth`, `clinical_model.pkl`
+
+3.1.1 Image Processing Backbone (ResNet-50):
+- Model File: `breast_model.pth` (~94.4 MB)
+- Base Architecture: 50-layer deep Residual Network (`torchvision.models.resnet50`).
+- Classification Head Adaptation:
+  The standard 1000-class linear layer is replaced with a single output projection:
+    `image_model.fc = nn.Linear(image_model.fc.in_features, 1)`
+- Preprocessing Pipeline:
+  1. Mammogram image read from raw upload bytes via `PIL.Image.open()` and converted to RGB.
+  2. Resized to `(224, 224)` spatial dimensions.
+  3. Transformed to PyTorch tensor with normalized float range [0.0, 1.0].
+  4. Batch dimension added: tensor shape `(1, 3, 224, 224)`.
+- Forward Pass:
+  Model evaluates under `torch.no_grad()`. Logit output is activated via Sigmoid:
+    `image_score = torch.sigmoid(output).item()`
+  Yields a scalar value between 0.0 (benign/normal) and 1.0 (highly suspicious lesion).
+
+3.1.2 Clinical Risk Classifier (Random Forest):
+- Model File: `clinical_model.pkl` (~26.1 MB)
+- Model Type: `sklearn.ensemble.RandomForestClassifier`
+- Enforces strict input validation against 11 clinical features:
+  1.  `breast_density`        (Integer 1 to 4: BI-RADS parenchymal density category)
+  2.  `age`                   (Integer: Patient chronological age in years)
+  3.  `family_history`        (Binary 0/1: Family incidence of breast cancer)
+  4.  `hormonal_risk`         (Binary 0/1: Exposure to hormonal therapies or prolonged estrogen)
+  5.  `obesity`               (Binary 0/1: Body mass index >= 30)
+  6.  `menopause_status`      (Binary 0/1: 0 = Premenopausal, 1 = Postmenopausal)
+  7.  `high_risk_age`         (Binary 0/1: Age threshold risk indicator)
+  8.  `density_risk`          (Binary 0/1: High tissue density risk flag)
+  9.  `genetic_risk_score`    (Float 0.0 - 1.0: Genetic assessment e.g., BRCA proxy)
+  10. `lifestyle_risk`        (Float 0.0 - 1.0: Modifiable lifestyle risk factor score)
+  11. `combined_risk_index`   (Float 0.0 - 1.0: Composite epidemiological risk score)
+- Feature Alignment: Ensures exact ordering matching `clinical_model.feature_names_in_`. Any missing
+  column is safely initialized to 0.
+- Inference:
+    `clinical_score = float(clinical_model.predict_proba(features)[0][1])`
+
+3.1.3 Multimodal Fusion Equation & Risk Stratification:
+The system calculates the overall risk through late weighted fusion:
+    `final_score = (0.7 * image_score) + (0.3 * clinical_score)`
+
+Clinical Stratification:
+- `final_score > 0.60` -> "HIGH RISK OF BREAST CANCER"
+- `0.40 < final_score <= 0.60` -> "MODERATE RISK"
+- `final_score <= 0.40` -> "LOW RISK"
+
+3.1.4 Rule-Based Clinical Explanation Engine:
+The backend synthesizes clear, bulleted diagnostic explanations:
+- If `image_score > 0.6`: "Suspicious tissue patterns detected in mammogram."
+- If `family_history == 1`: "Family history increases cancer probability."
+- If `age > 50`: "Age above 50 increases risk."
+- If `breast_density >= 3`: "High breast density detected."
+- If `obesity == 1`: "Obesity contributes to hormonal risk."
+
+Medical Recommendations:
+- High Risk: Immediate radiologist consultation, diagnostic mammography, biopsy confirmation.
+- Moderate Risk: Repeat screening in 2 months, breast ultrasound evaluation, lifestyle risk reduction.
+- Low Risk: Routine screening after 2 years, healthy lifestyle maintenance.
+
+3.1.5 Multi-Year Longitudinal Risk Timeline Forecasting:
+Projects forward-looking disease progression probabilities for clinical monitoring:
+- 6-Month Risk: `min(final_score * 1.10, 1.0)`
+- 1-Year Risk:  `min(final_score * 1.25, 1.0)`
+- 3-Year Risk:  `min(final_score * 1.50, 1.0)`
+Delivered as a structured dictionary to the frontend and rendered as an interactive Recharts curve.
+
+
+----------------------------------------------------------------------------------------------------
+3.2 MODULE 2: CERVICAL CANCER VISION TRANSFORMER (ViT) CLASSIFIER
+----------------------------------------------------------------------------------------------------
+Files: `backend setup/cervical/inference.py`, `aura_med_cervical_v1.pth`
+
+3.2.1 Deep Learning Architecture (ViT-Base Patch16-224):
+- Model File: `aura_med_cervical_v1.pth` (~343.3 MB)
+- Library: `timm` (PyTorch Image Models)
+- Architecture Identifier: `vit_base_patch16_224`
+- Structural Details:
+  * Image Resolution: 224 x 224 pixels
+  * Patch Size: 16 x 16 pixels (yields 14 x 14 = 196 image patches)
+  * Token Embeddings: 196 image tokens + 1 class [CLS] token
+  * Embedding Dimension: 768
+  * Transformer Layers: 12 self-attention blocks
+  * Attention Heads: 12 heads per block
+  * Classifier Head: 5-class linear projection (`num_classes=5`)
+
+3.2.2 Microscopic Cytology Preprocessing Pipeline:
+- Supported Formats: `.bmp` (native digital Pap smear microscopy format), `.jpeg`, `.png`.
+- Preprocessing steps:
+  1. Decode image stream into RGB format.
+  2. Resize image to `(224, 224)`.
+  3. Transform to PyTorch Tensor.
+  4. Standard ImageNet channel normalization:
+     `mean = [0.485, 0.456, 0.406]`
+     `std  = [0.229, 0.224, 0.225]`
+  5. Tensor unsqueezing to shape `(1, 3, 224, 224)`.
+
+3.2.3 Five Histopathological Output Classes:
+The model computes logits over five cellular categories:
+  Index 0: "Dyskeratotic"  -> Severe atypical keratinization (CIN3 / invasive precursor)
+  Index 1: "Koilocytotic"   -> HPV-related cytopathic changes with perinuclear halo (CIN1)
+  Index 2: "Metaplastic"    -> Squamous metaplasia at the cervical transformation zone (CIN2)
+  Index 3: "Parabasal"      -> Immature basal cells (atrophic or deep erosive dysplasia)
+  Index 4: "Normal"         -> Healthy, well-differentiated squamous epithelium
+
+Inference Execution:
+  1. `outputs = model(input_data)`
+  2. `probs = torch.softmax(outputs[0], dim=0)`
+  3. `conf, pred = torch.max(probs, 0)`
+  4. Returns `prediction: class_names[pred.item()]` and `confidence: float(conf)`.
+
+3.2.4 Bethesda System Clinical Progression Matrix:
+The UI automatically matches the prediction against the standard clinical Bethesda staging matrix:
+- Normal    -> Very Low Risk -> Routine age-appropriate screening.
+- CIN1      -> Low Risk      -> Mild dysplasia; repeat cytology in 12 months.
+- CIN2      -> Moderate Risk -> Moderate dysplasia; colposcopy & potential treatment.
+- CIN3      -> High Risk     -> Severe dysplasia; immediate excisional biopsy/LEEP.
+- Carcinoma -> Critical Risk -> Invasive cancer; referral to gynecologic oncologist.
+
+
+----------------------------------------------------------------------------------------------------
+3.3 MODULE 3: PCOS ULTRASOUND CLASSIFIER & EXPLAINABLE AI (GRAD-CAM)
+----------------------------------------------------------------------------------------------------
+Files: `backend setup/pcos/inference.py`, `pcos_vision_model.pth`
+
+3.3.1 Customized Neural Backbone (PCOSVisionModel / ResNet-50):
+- Model File: `pcos_vision_model.pth` (~94.4 MB)
+- Custom Model Definition:
+  ```python
+  class PCOSVisionModel(nn.Module):
+      def __init__(self):
+          super(PCOSVisionModel, self).__init__()
+          self.resnet = models.resnet50(weights=None)
+          num_ftrs = self.resnet.fc.in_features
+          self.resnet.fc = nn.Sequential(
+              nn.Dropout(0.5),
+              nn.Linear(num_ftrs, 2)
+          )
+      def forward(self, x):
+          return self.resnet(x)
+  ```
+- Binary Classification Output:
+  * Index 0: `Healthy` (Normal ovarian morphology)
+  * Index 1: `PCOS` (Polycystic ovarian morphology)
+
+3.3.2 Real-Time Grad-CAM Mathematical Mechanics:
+To ensure clinical transparency, Grad-CAM (Gradient-Weighted Class Activation Mapping) is executed
+on every ultrasound image during inference:
+- Target Convolutional Layer: `model.resnet.layer4[-1]` (the last residual block before pooling).
+- Hook Registration:
+  * Forward Hook records layer activations: `activations.append(act)`
+  * Full Backward Hook records backpropagated gradients: `gradients.append(grad)`
+- Mathematical Execution:
+  1. Model forward pass generates logits: `output = model(img_tensor)`
+  2. Winning class identified: `idx = torch.argmax(output).item()`
+  3. Backward pass triggered on the winning class:
+       `model.zero_grad()`
+       `output[0, idx].backward()`
+  4. Global Average Pooling over spatial dimensions (H, W) produces neuron importance weights:
+       `pooled_grads = torch.mean(gradients[0], dim=[0, 2, 3])`
+  5. Weight each feature map channel by its importance weight:
+       `acts[:, i, :, :] *= pooled_grads[i]`
+  6. Compute mean across channels and apply ReLU:
+       `heatmap = torch.mean(acts, dim=1).squeeze().numpy()`
+       `heatmap = np.maximum(heatmap, 0)`
+       `heatmap /= np.max(heatmap)`
+
+3.3.3 Colormap Generation, Alpha Blending & Base64 Data Streaming:
+- Heatmap is resized to `(224, 224)` via OpenCV.
+- Mapped to a pseudocolor gradient using `cv2.applyColorMap(..., cv2.COLORMAP_JET)`:
+  * Red / Orange highlights regions that contributed strongly to the PCOS diagnosis (e.g. peripheral
+    follicular rings or hyperechoic central stroma).
+  * Deep Blue represents background non-contributing tissue.
+- Blended with the original ultrasound image:
+    `overlay = cv2.addWeighted(img_cv, 0.6, heatmap_colored, 0.4, 0)`
+- Encoded as a JPEG buffer in-memory and converted to a Base64 string (`encoded_heatmap`), allowing
+  the frontend to display the heatmap overlay instantaneously without disk I/O.
+
+3.3.4 Rotterdam Diagnostic Consensus & Endocrine Biomarkers:
+The ultrasound evaluation is correlated on the frontend with the Rotterdam Consensus criteria:
+- Ovarian volume > 10 ml or >= 12 peripheral follicles (2–9 mm diameter).
+- Patient clinical parameters captured:
+  * Weight (kg), Height (cm), and calculated Body Mass Index (BMI)
+  * Luteinizing Hormone (LH) & Follicle-Stimulating Hormone (FSH)
+  * LH/FSH Ratio (a ratio > 2.0 is a hallmark clinical indicator of PCOS)
+  * Anti-Müllerian Hormone (AMH - elevated in PCOS patients)
+  * Serum Androgen Level (evaluates clinical or biochemical hyperandrogenism)
+
+
+====================================================================================================
+4. BACKEND FASTAPI SERVER & REST API SPECIFICATION
+====================================================================================================
+File: `backend setup/server.py`
+Running on: `http://127.0.0.1:8000`
+
+4.1 Server Structure & Middleware Setup:
+- FastAPI instance initialized with standard CORS middleware allowing `*` origins for local
+  development across port 5173 (frontend) and port 8000 (backend).
+- Auto-generated Swagger documentation accessible at: `http://127.0.0.1:8000/docs`.
+
+4.2 Dynamic Model Loader & Fault-Tolerant Fallback:
+Inference modules (`breast.inference`, `cervical.inference`, `pcos.inference`) are loaded dynamically
+on server startup. If weight files are temporarily unavailable or local CUDA dependencies differ,
+the server catches import errors and initializes fallback mock responses so the development server
+never crashes.
+
+4.3 Complete API Endpoint Contracts & Payloads:
+
+----------------------------------------------------------------------------------------------------
+4.3.1 POST /patient/start
+----------------------------------------------------------------------------------------------------
+- Content-Type: `application/json`
+- Request Schema:
+  ```json
+  {
+    "patient_id": "P10452",
+    "name": "Jane Doe",
+    "age": "45",
+    "phone": "555-0102"
+  }
+  ```
+- Response Schema:
+  ```json
+  {
+    "status": "session_started",
+    "patient_id": "P10452",
+    "timestamp": "2026-09-10T22:30:00.000000"
+  }
+  ```
+
+----------------------------------------------------------------------------------------------------
+4.3.2 POST /patient/test/save
+----------------------------------------------------------------------------------------------------
+- Content-Type: `application/json`
+- Request Schema:
+  ```json
+  {
+    "patient_id": "P10452",
+    "test_type": "Breast Cancer",
+    "model_input": { "breast_density": 2, "age": 45, ... },
+    "prediction": "HIGH RISK OF BREAST CANCER",
+    "confidence": 0.772,
+    "heatmap": "<base64_string_if_available>"
+  }
+  ```
+- Response Schema:
+  ```json
+  {
+    "status": "success",
+    "message": "Test results saved"
+  }
+  ```
+
+----------------------------------------------------------------------------------------------------
+4.3.3 POST /predict/breast
+----------------------------------------------------------------------------------------------------
+- Content-Type: `multipart/form-data`
+- Form Parameters:
+  * `file`: UploadFile (Mammogram image binary, JPEG or PNG)
+  * Clinical Risk Fields: `breast_density` (int), `age` (int), `family_history` (int),
+    `hormonal_risk` (int), `obesity` (int), `menopause_status` (int), `high_risk_age` (int),
+    `density_risk` (int), `genetic_risk_score` (float), `lifestyle_risk` (float),
+    `combined_risk_index` (float), `patient_id` (str), `patient_name` (str), `phone` (str)
+- Response Schema:
+  ```json
+  {
+    "image_model_score": 0.824,
+    "clinical_model_score": 0.650,
+    "final_score": 0.772,
+    "diagnosis": "HIGH RISK OF BREAST CANCER",
+    "explanation": [
+      "Suspicious tissue patterns detected in mammogram.",
+      "Age above 50 increases risk."
+    ],
+    "recommended_actions": [
+      "Immediate radiologist consultation",
+      "Diagnostic mammography",
+      "Biopsy if abnormality confirmed"
+    ],
+    "risk_timeline": {
+      "6_months": 0.849,
+      "1_year": 0.965,
+      "3_years": 1.0
+    }
+  }
+  ```
+
+----------------------------------------------------------------------------------------------------
+4.3.4 POST /predict/cervical
+----------------------------------------------------------------------------------------------------
+- Content-Type: `multipart/form-data`
+- Form Parameters:
+  * `file`: UploadFile (Cytology smear image binary, BMP preferred)
+  * `patient_id` (str), `patient_name` (str), `age` (str), `phone` (str)
+- Response Schema:
+  ```json
+  {
+    "prediction": "Normal",
+    "confidence": 0.9842
+  }
+  ```
+
+----------------------------------------------------------------------------------------------------
+4.3.5 POST /predict/pcos
+----------------------------------------------------------------------------------------------------
+- Content-Type: `multipart/form-data`
+- Form Parameters:
+  * `file`: UploadFile (Pelvic ultrasound scan binary, JPEG or PNG)
+  * `patient_id` (str), `patient_name` (str), `age` (str), `phone` (str)
+- Response Schema:
+  ```json
+  {
+    "class": "PCOS",
+    "heatmap": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAwQDAgI..."
+  }
+  ```
+
+4.4 Local In-Memory Data Store (patient_tests_db):
+The backend server maintains an in-memory test list `patient_tests_db = []`. Every saved examination
+records patient metadata, timestamp, input parameters, prediction, and visual overlays.
+
+
+====================================================================================================
+5. FRONTEND ARCHITECTURE & CLINICAL USER EXPERIENCE
+====================================================================================================
+Directory: `frontend setup/final frontend/`
+Development URL: `http://localhost:5173`
+
+5.1 State Management & Global Session Guard (PatientContext.jsx):
+The `PatientContext` maintains global clinical state:
+- `patient`: Holds the current active patient object (`{ patientId, name, age, phone }`).
+- `isSessionActive`: Boolean flag indicating whether an examination session is officially opened.
+- Synchronizes with browser `localStorage` under `auramed_current_patient` and `auramed_session_active`.
+
+5.2 Route Protection & Diagnostic Module Lock Mechanism:
+- `ProtectedDiagnosticRoute` in `App.jsx` wraps `/breast`, `/cervical`, and `/pcos`.
+- If no active patient session exists (`isSessionActive === false`), direct URL navigation or clicks
+  on diagnostic modules automatically redirect back to the `/dashboard`.
+- Dashboard cards and Sidebar links display lock icons and lowered opacity until a patient session
+  is initialized.
+
+5.3 Clinical Diagnostic Pages:
+1. `Login.jsx`:
+   Healthcare provider authentication portal with credential fields, role display ("Chief Oncologist"),
+   and transition to the main dashboard.
+2. `Dashboard.jsx`:
+   Master command hub containing:
+   - Patient intake registration banner (`PatientForm.jsx`).
+   - Diagnostic module launchpad cards (Breast Cancer, Cervical Cancer, PCOS).
+   - Real-time usage analytics cards (`UsageStats.jsx`).
+   - Historical test log tables with search and clear history (`HistoryTable.jsx`).
+3. `BreastCancer.jsx`:
+   Interactive dual-stream diagnostic workbench with mammogram upload on the left and a 10-point
+   clinical biomarker grid on the right.
+4. `CervicalCancer.jsx`:
+   High-resolution cytology upload workbench with automated 5-stage classification.
+5. `PCOS.jsx`:
+   Pelvic ultrasound scanner workbench with 8-point endocrine biomarker panel (LH, FSH, AMH, etc.).
+
+5.4 Reusable UI Components:
+- `ImageUploader.jsx`: Drag-and-drop zone with instant image preview, file type validation (.bmp
+  enforced for cervical, .jpg/.png for breast and PCOS), and reset capabilities.
+- `PatientForm.jsx`: Dynamic form allowing doctors to enter patient demographics and toggle between
+  "Start Diagnostic Session" and "End Session & Lock Modules".
+- `ResultPanel.jsx`: Medical report generator displaying:
+  * Primary Diagnosis Badge (color-coded: Green for Normal/Healthy, Orange for Moderate, Red for High Risk/PCOS).
+  * Quantitative metrics (Risk Score %, Confidence %, or Ovarian Volume).
+  * Clinical Interpretation narrative (Explanation, Significance, Next Steps).
+  * Interactive Recharts Line Graph for multi-year risk progression curves.
+  * Base64 Grad-CAM Heatmap viewer displaying neural attention overlays.
+  * Cervical Disease Progression Table with active stage row highlighting.
+- `HistoryTable.jsx`: Paginated table displaying past analyses, disease types, status badges, and timestamps.
+- `UsageStats.jsx`: Real-time metric counters aggregating total tests and disease-specific breakdown.
+- `Navbar.jsx`: Application header showing attending physician ("Dr. Sarah Jenkins"), search bar, and alerts.
+- `Sidebar.jsx`: Collapsible navigation menu reflecting live module lock/unlock status.
+
+5.5 Medical Interpretability Engine (ClinicalInterpretation.js):
+Client-side clinical rule engine translating raw neural network labels into medical prose:
+- Breast Cancer: Differentiates between malignant features (spiculated margins, microcalcifications)
+  and benign features (smooth homogeneous density).
+- Cervical Cancer: Maps predictions to Bethesda dysplasia stages (CIN1, CIN2, CIN3, Carcinoma)
+  with specific follow-up intervals.
+- PCOS: Explains ovarian volumetric thresholds (> 10 ml) and Rotterdam diagnostic correlation.
+
+
+====================================================================================================
+6. LOCAL DIRECTORY STRUCTURE & CODE REPOSITORY INVENTORY
+====================================================================================================
+f:\AURAMED_HEALTHCARE\
+│
+├── .gitignore                                      # Excludes large binaries, venvs, and cache
+├── auramed-demo.mp4                                # Complete end-to-end screen demonstration video
+├── auramed_screenshot_1.png                        # UI Screenshot: Dashboard view
+├── auramed_screenshot_2.png                        # UI Screenshot: Breast Cancer module view
+├── auramed_screenshot_3.png                        # UI Screenshot: Cervical Cancer module view
+├── auramed_screenshot_4.png                        # UI Screenshot: PCOS module & heatmap view
+├── AURAMED_HEALTHCARE_COMPREHENSIVE_SYSTEM_REPORT.txt # Comprehensive technical report
+├── AURAMED_LOCAL_SYSTEM_AND_MODEL_REPORT.txt       # This local full-stack technical report
+│
+└── auramed full setup\
+    ├── howtorun.txt                                # Manual command-line execution instructions
+    ├── run_all.bat                                 # Master batch script (spawns both servers)
+    ├── run_backend.bat                             # Launches FastAPI backend on 127.0.0.1:8000
+    ├── run_frontend.bat                            # Launches Vite frontend on localhost:5173
+    ├── wireframe.png                               # UI/UX design wireframe graphic
+    │
+    ├── backend setup\
+    │   ├── requirements.txt                        # Python dependencies
+    │   ├── server.py                               # FastAPI REST application server
+    │   ├── steps.txt                               # Quick step-by-step setup guide
+    │   ├── test_models.py                          # Offline model loading and verification script
+    │   │
+    │   ├── breast\
+    │   │   ├── __init__.py
+    │   │   ├── breast_model.pth                    # PyTorch ResNet-50 weights (94.4 MB)
+    │   │   ├── clinical_model.pkl                  # Scikit-Learn Random Forest model (26.1 MB)
+    │   │   └── inference.py                        # Multimodal fusion inference pipeline
+    │   │
+    │   ├── cervical\
+    │   │   ├── __init__.py
+    │   │   ├── aura_med_cervical_v1.pth            # PyTorch ViT-Base weights (343.3 MB)
+    │   │   └── inference.py                        # Vision Transformer inference pipeline
+    │   │
+    │   └── pcos\
+    │       ├── __init__.py
+    │       ├── pcos_vision_model.pth               # PyTorch ResNet-50 weights (94.4 MB)
+    │       └── inference.py                        # ResNet-50 + Grad-CAM inference pipeline
+    │
+    ├── frontend setup\
+    │   └── final frontend\
+    │       ├── .env                                # API base URL (VITE_API_BASE_URL=http://localhost:8000)
+    │       ├── index.html                          # HTML5 application root
+    │       ├── package.json                        # Node.js project manifest & dependencies
+    │       ├── vite.config.js                      # Vite bundler configuration
+    │       ├── tailwind.config.js                  # TailwindCSS design system styling configuration
+    │       └── src\
+    │           ├── App.jsx                         # Main application layout, routing & session protection
+    │           ├── main.jsx                        # React root mount point
+    │           ├── index.css                       # Global Tailwind styles
+    │           ├── components\                     # UI components (ResultPanel, ImageUploader, etc.)
+    │           ├── context\                        # React Context providers (PatientContext.jsx)
+    │           ├── pages\                          # View pages (Dashboard, Breast, Cervical, PCOS, Login)
+    │           ├── services\                       # Axios API communication layer (api.js)
+    │           └── utils\                          # Clinical interpretation logic
+    │
+    └── test images\                                # High-quality clinical validation samples
+        ├── breast\                                 # Sample mammogram images (.jpeg)
+        ├── cervical\                               # Cytological smear images (.bmp, .png)
+        └── pcos\                                   # Pelvic ultrasound scans (.jpg, .png)
+
+
+====================================================================================================
+7. MODEL VERIFICATION SCRIPT & SAMPLE TEST DATA
+====================================================================================================
+The repository includes a dedicated offline verification script:
+`backend setup/test_models.py`
+
+This script executes offline forward passes on all three neural networks using local test images:
+
+1. Breast Cancer Test:
+   - Image: `test images/breast/bcnew1.jpeg`
+   - Clinical Parameters: Patient age 45, density 2, baseline risk values.
+   - Result: Successful image scoring, Random Forest probability extraction, and 70/30 late fusion.
+
+2. Cervical Cancer Test:
+   - Image: `test images/cervical/normal.bmp`
+   - Result: Successful tensor transformation, ViT forward pass, and Softmax classification.
+
+3. PCOS Detection Test:
+   - Image: `test images/pcos/img_0_0.jpg`
+   - Result: Successful ResNet-50 forward pass, backward gradient computation, Grad-CAM heatmap
+     generation, and Base64 string encoding.
+
+
+====================================================================================================
+8. ARCHITECTURAL STRENGTHS & KEY TAKEAWAYS
+====================================================================================================
+1. 100% Localhost Viability:
+   The entire system runs locally on standard workstation hardware without external cloud dependencies.
+   Inference executes efficiently on CPU.
+2. Clinical Multimodality:
+   The platform moves beyond pure image classification by merging patient history, hormonal profiles,
+   and laboratory parameters with computer vision.
+3. Visual Explainability (XAI):
+   Real-time Grad-CAM heatmap overlays build physician trust by visualizing the anatomical focus areas
+   driving model decisions.
+4. Patient-Centric Workflow:
+   Strict session locking ensures that no diagnostic test can be executed without being tied to a
+   validated patient record.
+
+====================================================================================================
+                           END OF LOCAL SYSTEM & MODEL REPORT
+====================================================================================================

@@ -2,12 +2,12 @@
 
 BACKEND:
 
-cd "F:\healthcare ehh\auramed full setup\backend setup"
+cd "F:\PROJECTS\AuraMed\AuraMed-AWS\auramed full setup\backend setup"
 .\.venv\Scripts\python.exe -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload
 
 
 FRONTEND:
 
 
-cd "F:\healthcare ehh\auramed full setup\frontend setup\final frontend"
+cd "F:\PROJECTS\AuraMed\AuraMed-AWS\auramed full setup\frontend setup\final frontend"
 npm run dev

@@ -4,7 +4,34 @@ This repository is an archived reference of the March to September 2026 AWS depl
 
 Everything here is synthetic or demo material.
 
+**Links:** [GitHub](https://github.com/shriram-s7/auramed-aws) · Maintained successor: [auramed](https://github.com/shriram-s7/auramed) ([live demo](https://auramed-theta.vercel.app), [video](https://youtu.be/Dbne7Zs1pR8))
+
+![AuraMed screenshot](media/auramed_screenshot_1.png)
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, Tailwind, hosted on AWS Amplify |
+| API front door | Amazon API Gateway (HTTP API, `/{proxy+}`) |
+| Backend | FastAPI + Uvicorn on a single EC2 instance (port 8000) |
+| ML | PyTorch, torchvision, timm; scikit-learn clinical model for breast |
+| State | In-memory Python dict (no database) |
+
 ## Architecture
+
+```mermaid
+flowchart LR
+  B[Browser] --> A[AWS Amplify: React + Vite]
+  A --> G["API Gateway /{proxy+}"]
+  G --> E[EC2: uvicorn server:app]
+  E --> M1[breast]
+  E --> M2[cervical]
+  E --> M3[pcos]
+  E --> D[(in-memory dict)]
+```
+
+Same flow as text:
 
 ```
 Browser
